@@ -16,20 +16,23 @@ class Database:
 
     def create_table(self):
         cursor = self.conn.cursor()
-        try:
-            # Try to select the new column to see if it exists
-            cursor.execute('SELECT post_id FROM processed_posts LIMIT 1')
-        except sqlite3.OperationalError:
-            # If it fails, the table is old or doesn't exist. Drop and recreate.
-            print("[DB] Updating database schema...")
-            cursor.execute('DROP TABLE IF EXISTS processed_posts')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS processed_posts (
-                    post_id TEXT PRIMARY KEY,
-                    platform TEXT,
-                    timestamp DATETIME
-                )
-            ''')
+        # Processed posts table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS processed_posts (
+                post_id TEXT PRIMARY KEY,
+                platform TEXT,
+                timestamp DATETIME
+            )
+        ''')
+        # Daily activity tracking
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS daily_activity (
+                date TEXT,
+                platform TEXT,
+                count INTEGER,
+                PRIMARY KEY (date, platform)
+            )
+        ''')
         self.conn.commit()
 
     def is_processed(self, post_id):
@@ -41,6 +44,24 @@ class Database:
         cursor = self.conn.cursor()
         cursor.execute('INSERT OR IGNORE INTO processed_posts VALUES (?, ?, ?)', 
                        (post_id, platform, datetime.now()))
+        self.conn.commit()
+        self.increment_daily_count(platform)
+
+    def get_daily_count(self, platform):
+        today = datetime.now().strftime("%Y-%m-%d")
+        cursor = self.conn.cursor()
+        cursor.execute('SELECT count FROM daily_activity WHERE date = ? AND platform = ?', (today, platform))
+        row = cursor.fetchone()
+        return row[0] if row else 0
+
+    def increment_daily_count(self, platform):
+        today = datetime.now().strftime("%Y-%m-%d")
+        cursor = self.conn.cursor()
+        cursor.execute('''
+            INSERT INTO daily_activity (date, platform, count)
+            VALUES (?, ?, 1)
+            ON CONFLICT(date, platform) DO UPDATE SET count = count + 1
+        ''', (today, platform))
         self.conn.commit()
 
 class AutomationEngine:
@@ -112,7 +133,14 @@ class AutomationEngine:
             print("[AUTO] Outside of business hours. Sleeping to reduce detection risk.")
             return
 
+        # Check daily limits from DB
+        current_count = self.db.get_daily_count(platform)
+        if current_count >= self.limits.get(platform, 10):
+            print(f"[AUTO] Daily limit reached for {platform} ({current_count}/{self.limits[platform]}). Stopping.")
+            return
+
         print(f"\n[AUTO] Starting autonomous run for Niche: '{niche}' on {platform}")
+        print(f"[AUTO] Current daily count: {current_count}/{self.limits[platform]}")
         
         # 1. Search for posts
         if platform == "linkedin":
@@ -199,7 +227,35 @@ class AutomationEngine:
             step = random.randint(100, 300)
             await page.mouse.wheel(0, step)
             current_scroll += step
+            # Randomized side movements
+            if random.random() > 0.7:
+                await page.mouse.move(random.randint(100, 800), random.randint(100, 600))
             await self.human_delay(0.5, 1.5)
+
+    async def like_linkedin_post(self, page):
+        try:
+            # Try to find the Like button
+            like_btn = await page.wait_for_selector("button.react-button__trigger, .artdeco-button__text:has-text('Like')", timeout=5000)
+            is_pressed = await like_btn.get_attribute("aria-pressed")
+            if is_pressed == "false":
+                print("[LinkedIn] Liking post for stealth...")
+                await like_btn.click()
+                await self.human_delay(1, 2)
+            return True
+        except:
+            print("[LinkedIn] Could not find Like button, skipping...")
+            return False
+
+    async def like_x_post(self, page):
+        try:
+            like_btn = await page.wait_for_selector("div[data-testid='like']", timeout=5000)
+            print("[X] Liking post for stealth...")
+            await like_btn.click()
+            await self.human_delay(1, 2)
+            return True
+        except:
+            print("[X] Could not find Like button, skipping...")
+            return False
 
     async def search_linkedin(self, keyword):
         page = await self.browser_context.new_page()
@@ -280,7 +336,10 @@ class AutomationEngine:
         try:
             await page.goto(post_url, wait_until="load", timeout=60000)
             await self.human_delay(5, 8)
-            await page.evaluate("window.scrollTo(0, 500)")
+            await page.evaluate("window.scrollTo(0, 300)")
+            
+            # STEALTH: Like the post first
+            await self.like_linkedin_post(page)
             
             # Find editor
             editor = await page.wait_for_selector(".ql-editor, [role='textbox'][contenteditable='true']", timeout=10000)
@@ -327,6 +386,9 @@ class AutomationEngine:
             await page.goto(post_url, wait_until="load", timeout=60000)
             await self.human_delay(5, 8)
             
+            # STEALTH: Like the post first
+            await self.like_x_post(page)
+
             # Click Reply
             reply_box = await page.wait_for_selector("div[data-testid='reply'], [role='textbox']", timeout=10000)
             await reply_box.click()
