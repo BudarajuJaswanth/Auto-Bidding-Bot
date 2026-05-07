@@ -100,8 +100,8 @@ class AutomationEngine:
         Post Content: {post_content}
         My Skills: {self.user_skills}
         
-        Write a professional, 3-4 sentence bid comment for this post. 
-        Be natural, human-like, and mention how my skills fit. 
+        Write a very short, professional, 1-2 sentence bid comment for this post. 
+        Be natural, concise, and mention how my skills fit. 
         Do not use hashtags or emojis. 
         Output ONLY the comment text.
         """
