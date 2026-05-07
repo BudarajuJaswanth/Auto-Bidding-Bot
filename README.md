@@ -2,6 +2,29 @@
 
 An autonomous AI-driven bidding bot for LinkedIn and X (Twitter), built with Python, Playwright, FastAPI, and orchestrated via n8n.
 
+## 🏗 Architecture Overview
+
+```mermaid
+graph TD
+    A[n8n Scheduler] -- Cron/Schedule --> B[n8n HTTP Request]
+    B -- Webhook via ngrok --> C[FastAPI Server]
+    C -- Background Task --> D[Automation Engine]
+    D -- Playwright --> E[LinkedIn / X]
+    D -- Prompt --> F[Groq AI / LLama 3.1]
+    F -- 1-2 Sentence Bid --> D
+    E -- Success/Fail --> G[SQLite Database]
+    G -- Deduplication --> D
+```
+
+## 🚀 Technical Workflow
+1. **Trigger**: n8n kicks off a workflow every 2 hours during business hours.
+2. **Handshake**: A secure POST request is sent via an **ngrok tunnel** to the local FastAPI server.
+3. **Detection**: The bot launches a persistent Chromium instance, searches for the specified niche, and scans for new posts.
+4. **Deduplication**: Each post URL is checked against a local **SQLite database** to ensure no duplicate bids are ever placed.
+5. **Engagement**: To lower ban risk, the bot first **Likes** the post before engaging.
+6. **AI Synthesis**: The post content is sent to **Groq (LLama 3.1)** to generate a highly relevant, concise, 2-sentence proposal.
+7. **Execution**: The bot simulates human typing to post the bid and logs the successful interaction.
+
 ## Features
 - **Multi-Platform**: Supports automated bidding on LinkedIn and X (Twitter).
 - **AI-Powered**: Generates personalized, concise bid comments using Groq (LLama 3.1).
