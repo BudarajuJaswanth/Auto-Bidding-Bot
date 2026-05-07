@@ -1,0 +1,116 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4f98113f-ffe5-4a5c-be53-41c2a9052f4f",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://roundish-stuck-amenity.ngrok-free.dev/auto_bid",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niche",
+              "value": "Python Automation Developer"
+            },
+            {
+              "name": "platform",
+              "value": "linkedin"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        160
+      ],
+      "id": "1e8a4040-844d-4393-a410-1af0e8128292",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://roundish-stuck-amenity.ngrok-free.dev/auto_bid",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "niche",
+              "value": "Python Automation Developer"
+            },
+            {
+              "name": "platform",
+              "value": "X"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        304,
+        -64
+      ],
+      "id": "d9768fc2-4dc5-4415-a9ce-3bad8fe88c14",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "3ad30e9e-f678-43d5-beee-28232741e477",
+  "meta": {
+    "instanceId": "d6aea5f69061d61f739a2005df2a34a1bb4c0812d7746b76e2ea08b92eb11640"
+  },
+  "id": "B4uWB5pU96Xw6kHf",
+  "tags": []
+}

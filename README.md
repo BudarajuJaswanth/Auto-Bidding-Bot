@@ -1,6 +1,18 @@
 # Auto Bidding Bot - Automation Layer
 
-This is the browser automation layer for the Auto Bidding Bot, built with Python, Playwright, and FastAPI. It handles interactions with LinkedIn and X (Twitter) while mimicking human behavior to avoid detection.
+An autonomous AI-driven bidding bot for LinkedIn and X (Twitter), built with Python, Playwright, FastAPI, and orchestrated via n8n.
+
+## Features
+- **Multi-Platform**: Supports automated bidding on LinkedIn and X (Twitter).
+- **AI-Powered**: Generates personalized, concise bid comments using Groq (LLama 3.1).
+- **Stealth Features**:
+    - **Like before Comment**: Automatically likes a post before replying to mimic human interest.
+    - **Human Typing**: Simulates real keystroke delays.
+    - **Randomized Behavior**: Includes random mouse movements and scrolling speeds.
+- **Safety Controls**:
+    - **Daily Limits**: Strictly capped at 15 bids for LinkedIn and 10 for X.
+    - **Business Hours**: Only runs during customizable work hours (default 9 AM - 6 PM).
+- **Orchestration**: Fully compatible with n8n for automated scheduling.
 
 ## Setup Instructions
 
@@ -14,41 +26,36 @@ This is the browser automation layer for the Auto Bidding Bot, built with Python
    python -m playwright install chromium
    ```
 
-3. **Run the Server**:
+3. **Configure Environment**:
+   Rename `.env.example` to `.env` and add your AI API key and skills.
+
+4. **Initial Login (Crucial)**:
+   Run the server once and log in manually to save your session:
    ```bash
    python main.py
    ```
+   Navigate to LinkedIn and X in the window that pops up and log in.
 
-## Initial Login (Crucial)
-On the first run, a Chromium window will open.
-- Navigate to [LinkedIn](https://linkedin.com) and log in.
-- Navigate to [X.com](https://x.com) and log in.
-Your session data will be saved in the `user_data/` directory. You won't need to log in again as long as this folder exists.
+## n8n Integration
+
+1. Install n8n.
+2. Import the `auto_bid_workflow.json` file into n8n.
+3. Set up **ngrok** to expose your local port 8000:
+   ```bash
+   ngrok http 8000
+   ```
+4. Update the HTTP Request nodes in n8n with your new ngrok URL.
 
 ## API Endpoints
 
-### 1. Search Posts
-**Endpoint**: `GET /search`
-**Parameters**:
-- `keyword`: The search term (e.g., "React Developer")
+### 1. Auto Bid (Background)
+**Endpoint**: `POST /auto_bid`
+**Query Parameters**:
+- `niche`: The search term (e.g., "Python Developer")
 - `platform`: `linkedin` or `x`
 
-**Example**: `http://localhost:8000/search?keyword=hiring&platform=linkedin`
+### 2. Manual Search
+**Endpoint**: `GET /search?keyword=hiring&platform=linkedin`
 
-### 2. Post Comment / Reply
-**Endpoint**: `POST /comment`
-**Body (JSON)**:
-```json
-{
-  "url": "https://www.linkedin.com/posts/...",
-  "text": "This is my bidding comment!",
-  "platform": "linkedin"
-}
-```
-
-## Anti-Detection Features
-- **Persistent Context**: Uses real browser profiles and cookies.
-- **Human Typing**: Random pauses between keystrokes.
-- **Smooth Scrolling**: Incremental scrolling with varying speeds.
-- **Randomized Delays**: Wait times between navigation and interaction actions.
-- **Stealth Args**: Disables common automation flags (`--disable-blink-features=AutomationControlled`).
+---
+*Disclaimer: Use responsibly. Automation that violates ToS can lead to account suspension.*
